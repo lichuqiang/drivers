@@ -53,9 +53,7 @@ type DynamicProvisioningBackend interface {
 	GetCapacity() (int64, error)
 }
 
-type FakeBackend struct {
-	Capacity int64
-}
+type FakeBackend struct {}
 
 func NewFakeBackend() *FakeBackend {
 	return &FakeBackend{}
@@ -82,5 +80,5 @@ func (w *FakeBackend) GetLocalVolume(volID string) (*LocalVolumeInfo, error) {
 }
 
 func (w *FakeBackend) GetCapacity() (int64, error) {
-	return w.Capacity, nil
+	return 100*1024*1024*1024, nil
 }

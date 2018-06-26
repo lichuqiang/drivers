@@ -22,6 +22,8 @@ import (
 	"testing"
 
 	"github.com/container-storage-interface/spec/lib/go/csi/v0"
+	"google.golang.org/grpc/status"
+	"google.golang.org/grpc/codes"
 )
 
 var fakeCs *controllerServer
@@ -36,7 +38,6 @@ func init() {
 
 // TestCreateVolume tests behavior of CreateVolume
 func TestCreateVolume(t *testing.T) {
-
 	scenarios := map[string]struct {
 		// Inputs
 		volSize      int64
@@ -133,4 +134,76 @@ func TestCreateVolume(t *testing.T) {
 		}
 	}
 
+}
+
+// TestDeleteVolume tests behavior of DeleteVolume
+func TestDeleteVolume(t *testing.T) {
+	// Valid request
+	req := &csi.DeleteVolumeRequest{
+		VolumeId: "default/" + fakeVolID,
+	}
+
+	// Expected Result
+	expectedRes := &csi.DeleteVolumeResponse{}
+
+	// Invoke DeleteVolume
+	actualRes, err := fakeCs.DeleteVolume(fakeCtx, req)
+	if err != nil {
+		t.Errorf("failed to DeleteVolume: %v", err)
+	}
+
+	// Validate result
+	if !reflect.DeepEqual(expectedRes, actualRes) {
+		t.Errorf("Unxpected response: %v", actualRes)
+	}
+
+	// Request with invalid backend
+	invalidReq := &csi.DeleteVolumeRequest{
+		VolumeId: "invalid-backend/" + fakeVolID,
+	}
+
+	expectedError := "requsted backend invalid-backend not exist"
+
+	// Invoke DeleteVolume
+	_, err = fakeCs.DeleteVolume(fakeCtx, invalidReq)
+	if err.Error() != expectedError {
+		t.Errorf("Unxpected error: %s", err.Error())
+	}
+}
+
+// TestGetCapacity tests behavior of GetCapacity
+func TestGetCapacity(t *testing.T) {
+	// Valid request
+	req := &csi.GetCapacityRequest{
+		Parameters: map[string]string{backendKey: defaultBackend},
+	}
+
+	// Expected Result
+	expectedRes := &csi.GetCapacityResponse{
+		AvailableCapacity: int64(fakeCapacity),
+	}
+
+	// Invoke DeleteVolume
+	actualRes, err := fakeCs.GetCapacity(fakeCtx, req)
+	if err != nil {
+		t.Errorf("failed to GetCapacity: %v", err)
+	}
+
+	// Validate result
+	if !reflect.DeepEqual(expectedRes, actualRes) {
+		t.Errorf("Unxpected response: %v", actualRes)
+	}
+
+	// Request with invalid backend
+	invalidReq := &csi.GetCapacityRequest{
+		Parameters: map[string]string{backendKey: "invalid-backend"},
+	}
+
+	expectedError := status.Error(codes.InvalidArgument, "Requested backend not exist")
+
+	// Invoke DeleteVolume
+	_, err = fakeCs.GetCapacity(fakeCtx, invalidReq)
+	if !reflect.DeepEqual(expectedError, err) {
+		t.Errorf("Unxpected error: %v", err)
+	}
 }
