@@ -36,23 +36,63 @@ type nodeServer struct {
 	*csicommon.DefaultNodeServer
 }
 
-func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
-
-	// Check arguments
+func validateNodePublishVolumeRequest(req *csi.NodePublishVolumeRequest) error {
 	if req.GetVolumeCapability() == nil || req.GetVolumeCapability().GetMount() == nil {
-		return nil, status.Error(codes.InvalidArgument, "Volume capability missing in request")
+		return status.Error(codes.InvalidArgument, "Volume capability missing in request")
 	}
 
 	if len(req.GetTargetPath()) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "Target path missing in request")
+		return status.Error(codes.InvalidArgument, "Target path missing in request")
 	}
 
 	if len(req.GetStagingTargetPath()) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "Staging Target path missing in request")
+		return status.Error(codes.InvalidArgument, "Staging Target path missing in request")
+	}
+
+	return nil
+}
+
+func validateNodeUnpublishVolumeRequest(req *csi.NodeUnpublishVolumeRequest) error {
+	if len(req.GetTargetPath()) == 0 {
+		return status.Error(codes.InvalidArgument, "Target path missing in request")
+	}
+
+	return nil
+}
+
+func validateNodeStageVolumeRequest(req *csi.NodeStageVolumeRequest) error {
+	if req.GetVolumeCapability() == nil || req.GetVolumeCapability().GetMount() == nil {
+		return status.Error(codes.InvalidArgument, "Volume capability missing in request")
+	}
+
+	if len(req.GetVolumeAttributes()["device-path"]) == 0 {
+		return status.Error(codes.InvalidArgument, "Device path missing in request")
+	}
+
+	if len(req.GetStagingTargetPath()) == 0 {
+		return status.Error(codes.InvalidArgument, "Target path missing in request")
+	}
+
+	return nil
+}
+
+func validatereqNodeUnstageVolumeRequest(req *csi.NodeUnstageVolumeRequest) error {
+	if len(req.GetStagingTargetPath()) == 0 {
+		return status.Error(codes.InvalidArgument, "Target path missing in request")
+	}
+
+	return nil
+}
+
+func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublishVolumeRequest) (*csi.NodePublishVolumeResponse, error) {
+
+	// Check arguments
+	if err := validateNodePublishVolumeRequest(req); err != nil {
+		return nil, err
 	}
 
 	targetPath := req.GetTargetPath()
-	notMnt, err := ns.mounter.IsLikelyNotMountPoint(targetPath)
+	notMnt, err := ns.mounter.IsNotMountPoint(targetPath)
 	if err != nil {
 		if os.IsNotExist(err) {
 			if err = os.MkdirAll(targetPath, 0750); err != nil {
@@ -87,14 +127,13 @@ func (ns *nodeServer) NodePublishVolume(ctx context.Context, req *csi.NodePublis
 }
 
 func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpublishVolumeRequest) (*csi.NodeUnpublishVolumeResponse, error) {
-
 	// Check arguments
-	if len(req.GetTargetPath()) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "Target path missing in request")
+	if err := validateNodeUnpublishVolumeRequest(req); err != nil {
+		return nil, err
 	}
 
 	// Unmounting the image
-	err := ns.mounter.Unmount(req.GetTargetPath())
+	err :=volumeutil.UnmountMountPoint(req.GetTargetPath(), ns.mounter, true)
 	if err != nil {
 		return nil, status.Error(codes.Internal, err.Error())
 	}
@@ -105,18 +144,9 @@ func (ns *nodeServer) NodeUnpublishVolume(ctx context.Context, req *csi.NodeUnpu
 }
 
 func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVolumeRequest) (*csi.NodeStageVolumeResponse, error) {
-
 	// Check arguments
-	if req.GetVolumeCapability() == nil || req.GetVolumeCapability().GetMount() == nil {
-		return nil, status.Error(codes.InvalidArgument, "Volume capability missing in request")
-	}
-
-	if len(req.GetVolumeAttributes()["device-path"]) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "Device path missing in request")
-	}
-
-	if len(req.GetStagingTargetPath()) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "Target path missing in request")
+	if err := validateNodeStageVolumeRequest(req); err != nil {
+		return nil, err
 	}
 
 	targetPath := req.GetStagingTargetPath()
@@ -158,8 +188,8 @@ func (ns *nodeServer) NodeStageVolume(ctx context.Context, req *csi.NodeStageVol
 func (ns *nodeServer) NodeUnstageVolume(ctx context.Context, req *csi.NodeUnstageVolumeRequest) (*csi.NodeUnstageVolumeResponse, error) {
 
 	// Check arguments
-	if len(req.GetStagingTargetPath()) == 0 {
-		return nil, status.Error(codes.InvalidArgument, "Target path missing in request")
+	if err := validatereqNodeUnstageVolumeRequest(req); err != nil {
+		return nil, err
 	}
 
 	if err := volumeutil.UnmountPath(req.GetStagingTargetPath(), ns.mounter); err != nil {

@@ -44,7 +44,35 @@ type controllerServer struct {
 	*csicommon.DefaultControllerServer
 }
 
+func (cs *controllerServer) validateCreateVolumeRequest(req *csi.CreateVolumeRequest) error {
+	if err := cs.Driver.ValidateControllerServiceRequest(csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME); err != nil {
+		return fmt.Errorf("invalid CreateVolumeRequest: %v", err)
+	}
+
+	if req.GetName() == "" {
+		return status.Error(codes.InvalidArgument, "Volume Name cannot be empty")
+	}
+
+	return nil
+}
+
+func (cs *controllerServer) validateDeleteVolumeRequest(req *csi.DeleteVolumeRequest) error {
+	if err := cs.Driver.ValidateControllerServiceRequest(csi.ControllerServiceCapability_RPC_CREATE_DELETE_VOLUME); err != nil {
+		return fmt.Errorf("invalid DeleteVolumeRequest: %v", err)
+	}
+
+	if req.GetVolumeId() == "" {
+		return status.Error(codes.InvalidArgument, "Volume ID cannot be empty")
+	}
+
+	return nil
+}
+
 func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVolumeRequest) (*csi.CreateVolumeResponse, error) {
+	// Check arguments
+	if err := cs.validateCreateVolumeRequest(req); err != nil {
+		return nil, err
+	}
 
 	// Volume ID
 	volID := uuid.NewUUID().String()
@@ -111,6 +139,10 @@ func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 }
 
 func (cs *controllerServer) DeleteVolume(ctx context.Context, req *csi.DeleteVolumeRequest) (*csi.DeleteVolumeResponse, error) {
+	// Check arguments
+	if err := cs.validateDeleteVolumeRequest(req); err != nil {
+		return nil, err
+	}
 
 	// Volume Delete
 	volID := req.GetVolumeId()
