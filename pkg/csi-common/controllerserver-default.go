@@ -85,3 +85,15 @@ func (cs *DefaultControllerServer) ControllerGetCapabilities(ctx context.Context
 		Capabilities: cs.Driver.cap,
 	}, nil
 }
+
+func (cs *DefaultControllerServer) CreateSnapshot(context.Context, *csi.CreateSnapshotRequest) (*csi.CreateSnapshotResponse, error) {
+	return &csi.CreateSnapshotResponse{}, nil
+}
+
+func (cs *DefaultControllerServer) DeleteSnapshot(context.Context, *csi.DeleteSnapshotRequest) (*csi.DeleteSnapshotResponse, error) {
+	return &csi.DeleteSnapshotResponse{}, nil
+}
+
+func (cs *DefaultControllerServer)ListSnapshots(context.Context, *csi.ListSnapshotsRequest) (*csi.ListSnapshotsResponse, error) {
+	return &csi.ListSnapshotsResponse{}, nil
+}
