@@ -17,9 +17,17 @@ limitations under the License.
 package localvolume
 
 import (
-	"github.com/kubernetes-csi/drivers/pkg/csi-common"
+	"golang.org/x/net/context"
 )
 
-type identityServer struct {
-	*csicommon.DefaultIdentityServer
-}
+var fakeDriverName = "LocalDriver"
+var fakeBackendType = "fake"
+var fakeNodeID = "LocalNodeID"
+var fakeNodeName = "LocalNode"
+var fakeEndpoint = "tcp://127.0.0.1:10000"
+var fakeCtx = context.Background()
+var fakeVolName = "LocalVolumeName"
+var fakeVolID = "LocalVolumeID"
+var fakeVolType = ""
+var fakeDevicePath = "/dev/xxx"
+var fakeTargetPath = "/mnt/local"

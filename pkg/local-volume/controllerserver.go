@@ -1,5 +1,5 @@
 /*
-Copyright 2017 The Kubernetes Authors.
+Copyright 2018 The Kubernetes Authors.
 
 Licensed under the Apache License, Version 2.0 (the "License");
 you may not use this file except in compliance with the License.
@@ -52,7 +52,7 @@ func (cs *controllerServer) CreateVolume(ctx context.Context, req *csi.CreateVol
 	// Volume Size - Default is 1 GiB
 	volSizeBytes := int64(1 * 1024 * 1024 * 1024)
 	if req.GetCapacityRange() != nil {
-		volSizeBytes = int64(req.GetCapacityRange().GetRequiredBytes())
+		volSizeBytes = req.GetCapacityRange().GetRequiredBytes()
 	}
 	volSizeGiB := util.RoundUpSize(volSizeBytes, 1024*1024*1024)
 

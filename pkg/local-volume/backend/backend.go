@@ -65,6 +65,7 @@ func (w *FakeBackend) CreateLocalVolume(volReq *LocalVolumeReq) (*LocalVolumeInf
 	return &LocalVolumeInfo{
 		VolumeID: volReq.VolumeID,
 		SizeInGiB: volReq.SizeInGiB,
+		VolumePath: "/dev/xxx",
 	}, nil
 }
 
